@@ -1,22 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>ISR OPS ENTRY</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; }
-  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-  th, td { border: 1px solid #ccc; padding: 5px; text-align: center; }
-  th { background: #f0f0f0; }
-  input[type="number"] { width: 60px; }
+body { font-family: Arial; margin: 20px; }
+table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+th, td { border: 1px solid #ccc; padding: 5px; text-align: center; }
+input { width: 70px; text-align: center; }
+tfoot td { font-weight: bold; background: #f8f8f8; }
 </style>
 </head>
 <body>
+<h2>ISR OPS ENTRY</h2>
 
-<h2>ISR OPS Entry</h2>
 <form id="productForm">
-  <label><b>Date:</b> <input type="date" id="date" required></label>
-  <label><b>Person Name:</b> <input type="text" id="personName" required></label>
+  <label>Date: <input type="date" id="date" required></label>
+  <label>Person Name: <input type="text" id="personName" required></label>
   <button type="button" id="loadBtn">Load Existing Data</button>
 
   <table id="skuTable">
@@ -26,9 +26,11 @@
         <th colspan="2">Opening</th>
         <th colspan="2">Primary</th>
         <th colspan="2">Secondary</th>
+        <th colspan="2">Total</th>
       </tr>
       <tr>
         <th></th>
+        <th>Loose</th><th>IC</th>
         <th>Loose</th><th>IC</th>
         <th>Loose</th><th>IC</th>
         <th>Loose</th><th>IC</th>
@@ -37,57 +39,76 @@
     <tbody></tbody>
   </table>
 
-  <button type="submit">Submit</button>
+  <br><button type="submit">Submit</button>
 </form>
 
 <script>
-const SKUS = ["RG1.25G","RG2.20G","RG4.00G","RGZ17.00G","RG100.00G",
-               "TZ0.25G","TZ0.45G","TZZ4.25G","TZ10G","TZ50G",
-               "KH5.75G","KH30.00G","MT2.75G"];
-
-const scriptURL = "https://script.google.com/macros/s/AKfycbybskgSZeOjWCnPsjjf_hjdPbh5K7AddLE9IAorZ-Q6-bt5565o4_QINafU9zsNR-T5/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbw-NXGkUhPLlDgMOLMl_r_MucO-bvDdDdNxV1X0U4sAZFQXTh_kaEWgZXCilojcDE1v/exec"; // <-- replace with your deployed web app URL
+const SKUS = [
+  "RG1.25G","RG2.20G","RG4.00G","RGZ17.00G","RG100.00G",
+  "TZ0.25G","TZ0.45G","TZZ4.25G","TZ10G","TZ50G",
+  "KH5.75G","KH30.00G","MT2.75G"
+];
 
 const tbody = document.querySelector("#skuTable tbody");
+
+// Build table rows dynamically
 SKUS.forEach(sku => {
   const row = document.createElement("tr");
   row.innerHTML = `
     <td>${sku}</td>
-    <td><input type="number" name="openingLoose_${sku}"></td>
-    <td><input type="number" name="openingIC_${sku}"></td>
-    <td><input type="number" name="primaryLoose_${sku}"></td>
-    <td><input type="number" name="primaryIC_${sku}"></td>
-    <td><input type="number" name="secondaryLoose_${sku}"></td>
-    <td><input type="number" name="secondaryIC_${sku}"></td>
-  `;
+    <td><input type="number" name="openingLoose_${sku}" oninput="updateTotals('${sku}')"></td>
+    <td><input type="number" name="openingIC_${sku}" oninput="updateTotals('${sku}')"></td>
+    <td><input type="number" name="primaryLoose_${sku}" oninput="updateTotals('${sku}')"></td>
+    <td><input type="number" name="primaryIC_${sku}" oninput="updateTotals('${sku}')"></td>
+    <td><input type="number" name="secondaryLoose_${sku}" oninput="updateTotals('${sku}')"></td>
+    <td><input type="number" name="secondaryIC_${sku}" oninput="updateTotals('${sku}')"></td>
+    <td><input type="number" name="totalLoose_${sku}" readonly></td>
+    <td><input type="number" name="totalIC_${sku}" readonly></td>`;
   tbody.appendChild(row);
 });
 
-// Load existing data
+// --- Live total calculation ---
+function updateTotals(sku) {
+  const oL = +document.querySelector(`input[name="openingLoose_${sku}"]`).value || 0;
+  const pL = +document.querySelector(`input[name="primaryLoose_${sku}"]`).value || 0;
+  const sL = +document.querySelector(`input[name="secondaryLoose_${sku}"]`).value || 0;
+  const oI = +document.querySelector(`input[name="openingIC_${sku}"]`).value || 0;
+  const pI = +document.querySelector(`input[name="primaryIC_${sku}"]`).value || 0;
+  const sI = +document.querySelector(`input[name="secondaryIC_${sku}"]`).value || 0;
+
+  document.querySelector(`input[name="totalLoose_${sku}"]`).value = oL + pL + sL;
+  document.querySelector(`input[name="totalIC_${sku}"]`).value = oI + pI + sI;
+}
+
+// --- Load existing data ---
 document.getElementById("loadBtn").addEventListener("click", () => {
   const date = document.getElementById("date").value;
   const person = document.getElementById("personName").value.trim();
-  if (!date || !person) return alert("Please fill date and name.");
+  if (!date || !person) return alert("Please fill date and person name.");
 
   fetch(`${scriptURL}?date=${encodeURIComponent(date)}&personName=${encodeURIComponent(person)}`)
-    .then(res => res.json())
+    .then(r => r.json())
     .then(data => {
       for (const sku in data) {
-        const obj = data[sku];
-        document.querySelector(`input[name="openingLoose_${sku}"]`).value = obj.openingLoose || "";
-        document.querySelector(`input[name="openingIC_${sku}"]`).value = obj.openingIC || "";
-        document.querySelector(`input[name="primaryLoose_${sku}"]`).value = obj.primaryLoose || "";
-        document.querySelector(`input[name="primaryIC_${sku}"]`).value = obj.primaryIC || "";
-        document.querySelector(`input[name="secondaryLoose_${sku}"]`).value = obj.secondaryLoose || "";
-        document.querySelector(`input[name="secondaryIC_${sku}"]`).value = obj.secondaryIC || "";
+        const d = data[sku];
+        document.querySelector(`input[name="openingLoose_${sku}"]`).value = d.openingLoose || "";
+        document.querySelector(`input[name="openingIC_${sku}"]`).value = d.openingIC || "";
+        document.querySelector(`input[name="primaryLoose_${sku}"]`).value = d.primaryLoose || "";
+        document.querySelector(`input[name="primaryIC_${sku}"]`).value = d.primaryIC || "";
+        document.querySelector(`input[name="secondaryLoose_${sku}"]`).value = d.secondaryLoose || "";
+        document.querySelector(`input[name="secondaryIC_${sku}"]`).value = d.secondaryIC || "";
+        updateTotals(sku);
       }
-      alert("Data loaded successfully!");
+      alert("Existing data loaded!");
     })
     .catch(err => alert("Error loading data: " + err.message));
 });
 
-// Submit form
+// --- Submit form ---
 document.getElementById("productForm").addEventListener("submit", e => {
   e.preventDefault();
+
   const date = document.getElementById("date").value;
   const personName = document.getElementById("personName").value.trim();
 
@@ -106,7 +127,7 @@ document.getElementById("productForm").addEventListener("submit", e => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ date, personName, skuData })
   })
-  .then(res => res.json())
+  .then(r => r.json())
   .then(data => {
     if (data.status === "success") alert("✅ Data submitted successfully!");
     else alert("❌ Error: " + data.message);
