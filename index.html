@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ISR OPS - SKU Entry</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: auto;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    input, textarea {
+      width: 100%;
+      margin: 8px 0;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    .skuRow {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: white;
+      padding: 8px;
+      border-radius: 5px;
+      margin-bottom: 8px;
+      border: 1px solid #ddd;
+    }
+    .skuRow span {
+      flex: 1;
+      font-weight: bold;
+      color: #333;
+    }
+    .skuRow input {
+      width: 80px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>ISR OPS - SKU Entry</h2>
+
+  <form id="skuForm">
+    <label><strong>Date:</strong></label>
+    <input type="date" name="date" required>
+
+    <label><strong>Name of Person:</strong></label>
+    <input type="text" name="personName" placeholder="Enter your name" required>
+
+    <div id="skuSection" class="hidden">
+      <h3>Enter Details for Each SKU</h3>
+      <div id="skuContainer"></div>
+      <button type="submit">Submit</button>
+    </div>
+  </form>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const skuList = [
+        "RG1.25G", "RG2.20G", "RG4.00G", "RGZ17.00G",
+        "TZ0.25G", "TZ0.45G", "TZZ4.25G", "TZ10G",
+        "TZ50G", "KH5.75G", "KH30.00G", "MT2.75G"
+      ];
+
+      const skuContainer = document.getElementById("skuContainer");
+      const skuSection = document.getElementById("skuSection");
+      const form = document.getElementById("skuForm");
+
+      // Create SKU rows
+      skuList.forEach(sku => {
+        const div = document.createElement("div");
+        div.className = "skuRow";
+        div.innerHTML = `
+          <span>${sku}</span>
+          <input type="number" step="0.001" placeholder="Loose Qty" name="looseQty_${sku}">
+          <input type="number" step="0.001" placeholder="IC" name="ic_${sku}">
+        `;
+        skuContainer.appendChild(div);
+      });
+
+      // Show SKU section only after date and name filled
+      const dateInput = form.querySelector('[name="date"]');
+      const nameInput = form.querySelector('[name="personName"]');
+      function checkFields() {
+        if (dateInput.value && nameInput.value.trim()) {
+          skuSection.classList.remove("hidden");
+        } else {
+          skuSection.classList.add("hidden");
+        }
+      }
+      dateInput.addEventListener("change", checkFields);
+      nameInput.addEventListener("input", checkFields);
+
+      // Handle form submission
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const date = formData.get("date");
+        const personName = formData.get("personName");
+
+        const skuData = skuList.map(sku => ({
+          sku,
+          looseQty: formData.get(`looseQty_${sku}`) || "",
+          ic: formData.get(`ic_${sku}`) || ""
+        }));
+
+        const data = new FormData();
+        data.append("date", date);
+        data.append("personName", personName);
+        data.append("skuData", JSON.stringify(skuData));
+
+        const scriptURL = "https://script.google.com/macros/s/AKfycbysjArXm4myQmpIv8BiIl8h1zIWGTXgAQLgRKhVgKPGsa2t79Tc2wcA-ikkLrKEeb4F/exec";
+
+        fetch(scriptURL, { method: "POST", body: data })
+          .then(response => response.text())
+          .then(text => alert("Submitted Successfully!"))
+          .catch(error => alert("Error: " + error.message));
+      });
+    });
+  </script>
+
+</body>
+</html>
