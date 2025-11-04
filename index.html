@@ -1,212 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ISR OPS Entry</title>
+<meta charset="UTF-8">
+<title>ISR OPS ENTRY</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 0 10px;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-  }
-  th, td {
-    border: 1px solid #aaa;
-    padding: 6px;
-    text-align: center;
-  }
-  th {
-    background-color: #f0f0f0;
-  }
-  input[type="number"] {
-    width: 80px;
-    padding: 4px;
-    box-sizing: border-box;
-  }
-  input[type="text"], input[type="date"] {
-    width: 180px;
-    padding: 6px;
-    box-sizing: border-box;
-  }
-  .top-inputs {
-    margin-bottom: 10px;
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  .top-inputs label {
-    font-weight: bold;
-  }
-  button {
-    margin-top: 15px;
-    padding: 10px 18px;
-    font-size: 16px;
-  }
-  .loading {
-    margin-top: 10px;
-    font-style: italic;
-    color: #555;
-  }
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { border: 1px solid #ccc; padding: 5px; text-align: center; }
+  th { background: #f0f0f0; }
+  input[type="number"] { width: 60px; }
 </style>
 </head>
 <body>
 
-<h2>ISR OPS Entry Form</h2>
-
-<div class="top-inputs">
-  <label>
-    Date: 
-    <input type="date" id="dateInput" name="date" required />
-  </label>
-  <label>
-    Person Name: 
-    <input type="text" id="personInput" name="personName" placeholder="Enter your name" required />
-  </label>
-  <button id="fetchBtn" type="button">Load Existing Data</button>
-</div>
-
+<h2>ISR OPS Entry</h2>
 <form id="productForm">
-<table>
-  <thead>
-    <tr>
-      <th rowspan="2">SKU</th>
-      <th colspan="2">Opening</th>
-      <th colspan="2">Primary</th>
-      <th colspan="2">Secondary</th>
-    </tr>
-    <tr>
-      <th>Loose</th>
-      <th>IC</th>
-      <th>Loose</th>
-      <th>IC</th>
-      <th>Loose</th>
-      <th>IC</th>
-    </tr>
-  </thead>
-  <tbody id="skuTableBody"></tbody>
-</table>
+  <label><b>Date:</b> <input type="date" id="date" required></label>
+  <label><b>Person Name:</b> <input type="text" id="personName" required></label>
+  <button type="button" id="loadBtn">Load Existing Data</button>
 
-<button type="submit">Submit</button>
-<div class="loading" id="loadingMessage" style="display:none;">Loading data...</div>
+  <table id="skuTable">
+    <thead>
+      <tr>
+        <th>SKU</th>
+        <th colspan="2">Opening</th>
+        <th colspan="2">Primary</th>
+        <th colspan="2">Secondary</th>
+      </tr>
+      <tr>
+        <th></th>
+        <th>Loose</th><th>IC</th>
+        <th>Loose</th><th>IC</th>
+        <th>Loose</th><th>IC</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <button type="submit">Submit</button>
 </form>
 
 <script>
-const SKUS = [
-  { sku: "RG1.25G" }, { sku: "RG2.20G" }, { sku: "RG4.00G" },
-  { sku: "RGZ17.00G" }, { sku: "RGZ100.00G" },
-  { sku: "TZ0.25G" }, { sku: "TZ0.45G" }, { sku: "TZZ4.25G" },
-  { sku: "TZ10G" }, { sku: "TZ50G" },
-  { sku: "KH5.75G" }, { sku: "KH30.00G" }, { sku: "MT2.75G" }
-];
+const SKUS = ["RG1.25G","RG2.20G","RG4.00G","RGZ17.00G","RG100.00G",
+               "TZ0.25G","TZ0.45G","TZZ4.25G","TZ10G","TZ50G",
+               "KH5.75G","KH30.00G","MT2.75G"];
 
-// Build table
-const tbody = document.getElementById("skuTableBody");
-function createNumberInput(name) {
-  const input = document.createElement("input");
-  input.type = "number";
-  input.step = "0.001";
-  input.min = "0";
-  input.name = name;
-  return input;
-}
-SKUS.forEach(({ sku }) => {
-  const tr = document.createElement("tr");
-  const tdSKU = document.createElement("td");
-  tdSKU.textContent = sku;
-  tr.appendChild(tdSKU);
+const scriptURL = "https://script.google.com/macros/s/AKfycbybskgSZeOjWCnPsjjf_hjdPbh5K7AddLE9IAorZ-Q6-bt5565o4_QINafU9zsNR-T5/exec";
 
-  ["openingLoose", "openingIC", "primaryLoose", "primaryIC", "secondaryLoose", "secondaryIC"].forEach(field => {
-    const td = document.createElement("td");
-    td.appendChild(createNumberInput(`${field}_${sku}`));
-    tr.appendChild(td);
-  });
-  tbody.appendChild(tr);
+const tbody = document.querySelector("#skuTable tbody");
+SKUS.forEach(sku => {
+  const row = document.createElement("tr");
+  row.innerHTML = `
+    <td>${sku}</td>
+    <td><input type="number" name="openingLoose_${sku}"></td>
+    <td><input type="number" name="openingIC_${sku}"></td>
+    <td><input type="number" name="primaryLoose_${sku}"></td>
+    <td><input type="number" name="primaryIC_${sku}"></td>
+    <td><input type="number" name="secondaryLoose_${sku}"></td>
+    <td><input type="number" name="secondaryIC_${sku}"></td>
+  `;
+  tbody.appendChild(row);
 });
 
-const fetchBtn = document.getElementById("fetchBtn");
-const dateInput = document.getElementById("dateInput");
-const personInput = document.getElementById("personInput");
-const loadingMessage = document.getElementById("loadingMessage");
+// Load existing data
+document.getElementById("loadBtn").addEventListener("click", () => {
+  const date = document.getElementById("date").value;
+  const person = document.getElementById("personName").value.trim();
+  if (!date || !person) return alert("Please fill date and name.");
 
-const scriptURL = "https://script.google.com/macros/s/AKfycbznqjuR7eRQfjwsT-kSGQIZ5ggU5vs8GvCzffZzhlRgT2YkFQGTtgm_0B4dGVrt87I5/exec";
-
-// === Load Existing Data ===
-fetchBtn.addEventListener("click", () => {
-  const dateVal = dateInput.value;
-  const personVal = personInput.value.trim();
-  if (!dateVal || !personVal) {
-    alert("Please enter both Date and Person Name before loading data.");
-    return;
-  }
-
-  loadingMessage.style.display = "block";
-
-  fetch(`${scriptURL}?date=${encodeURIComponent(dateVal)}&personName=${encodeURIComponent(personVal)}`)
+  fetch(`${scriptURL}?date=${encodeURIComponent(date)}&personName=${encodeURIComponent(person)}`)
     .then(res => res.json())
     .then(data => {
-      SKUS.forEach(({ sku }) => {
-        ["openingLoose","openingIC","primaryLoose","primaryIC","secondaryLoose","secondaryIC"].forEach(field=>{
-          document.querySelector(`input[name="${field}_${sku}"]`).value = "";
-        });
-      });
-
       for (const sku in data) {
         const obj = data[sku];
-        document.querySelector(`input[name="openingLoose_${sku}"]`).value = obj.looseQty || "";
-        document.querySelector(`input[name="openingIC_${sku}"]`).value = obj.ic || "";
-        document.querySelector(`input[name="primaryLoose_${sku}"]`).value = obj.openingPrimaryLoose || "";
-        document.querySelector(`input[name="primaryIC_${sku}"]`).value = obj.openingPrimaryIC || "";
-        document.querySelector(`input[name="secondaryLoose_${sku}"]`).value = obj.openingSecondaryLoose || "";
-        document.querySelector(`input[name="secondaryIC_${sku}"]`).value = obj.openingSecondaryIC || "";
+        document.querySelector(`input[name="openingLoose_${sku}"]`).value = obj.openingLoose || "";
+        document.querySelector(`input[name="openingIC_${sku}"]`).value = obj.openingIC || "";
+        document.querySelector(`input[name="primaryLoose_${sku}"]`).value = obj.primaryLoose || "";
+        document.querySelector(`input[name="primaryIC_${sku}"]`).value = obj.primaryIC || "";
+        document.querySelector(`input[name="secondaryLoose_${sku}"]`).value = obj.secondaryLoose || "";
+        document.querySelector(`input[name="secondaryIC_${sku}"]`).value = obj.secondaryIC || "";
       }
+      alert("Data loaded successfully!");
     })
-    .catch(err => alert("Error fetching data: " + err.message))
-    .finally(() => loadingMessage.style.display = "none");
+    .catch(err => alert("Error loading data: " + err.message));
 });
 
-// === Submit Form ===
-document.getElementById("productForm").addEventListener("submit", function(e) {
+// Submit form
+document.getElementById("productForm").addEventListener("submit", e => {
   e.preventDefault();
+  const date = document.getElementById("date").value;
+  const personName = document.getElementById("personName").value.trim();
 
-  const dateVal = dateInput.value;
-  const personVal = personInput.value.trim();
-  if (!dateVal || !personVal) {
-    alert("Date and Person Name are required.");
-    return;
-  }
-
-  const skuData = SKUS.map(({ sku }) => ({
+  const skuData = SKUS.map(sku => ({
     sku,
-    looseQty: document.querySelector(`input[name="openingLoose_${sku}"]`).value || "",
-    ic: document.querySelector(`input[name="openingIC_${sku}"]`).value || "",
-    openingPrimaryLoose: document.querySelector(`input[name="primaryLoose_${sku}"]`).value || "",
-    openingPrimaryIC: document.querySelector(`input[name="primaryIC_${sku}"]`).value || "",
-    openingSecondaryLoose: document.querySelector(`input[name="secondaryLoose_${sku}"]`).value || "",
-    openingSecondaryIC: document.querySelector(`input[name="secondaryIC_${sku}"]`).value || ""
+    openingLoose: document.querySelector(`input[name="openingLoose_${sku}"]`).value,
+    openingIC: document.querySelector(`input[name="openingIC_${sku}"]`).value,
+    primaryLoose: document.querySelector(`input[name="primaryLoose_${sku}"]`).value,
+    primaryIC: document.querySelector(`input[name="primaryIC_${sku}"]`).value,
+    secondaryLoose: document.querySelector(`input[name="secondaryLoose_${sku}"]`).value,
+    secondaryIC: document.querySelector(`input[name="secondaryIC_${sku}"]`).value
   }));
-
-  const payload = { date: dateVal, personName: personVal, skuData };
 
   fetch(scriptURL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({ date, personName, skuData })
   })
   .then(res => res.json())
   .then(data => {
-    if (data.status === "success") alert("Submitted Successfully!");
-    else alert("Error: " + (data.message || "Unknown error"));
+    if (data.status === "success") alert("✅ Data submitted successfully!");
+    else alert("❌ Error: " + data.message);
   })
   .catch(err => alert("Network error: " + err.message));
 });
 </script>
-
 </body>
 </html>
